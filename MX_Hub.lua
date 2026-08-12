@@ -364,41 +364,89 @@ end
 -- ============================================================================
 -- 4. FLOATING UI TOGGLE BUTTON (أيقونة عائمة لفتح وإغلاق القائمة)
 -- ============================================================================
-local function createFloatingToggle(WindowInstance)
+local MX_HubVisible = true
+
+local function createFloatingToggle()
     pcall(function()
         local coreGui = game:GetService("CoreGui")
         local existing = coreGui:FindFirstChild("MX_ToggleGui")
         if existing then existing:Destroy() end
 
-        local sg = Instance.new("ScreenGui", coreGui)
+        local sg = Instance.new("ScreenGui")
         sg.Name = "MX_ToggleGui"
         sg.ResetOnSpawn = false
+        sg.DisplayOrder = 999999
+        sg.Parent = coreGui
 
-        local btn = Instance.new("TextButton", sg)
-        btn.Size = UDim2.new(0, 48, 0, 48)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0, 50, 0, 50)
         btn.Position = UDim2.new(0, 15, 0.45, 0)
-        btn.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-        btn.TextColor3 = Color3.fromRGB(0, 230, 255)
+        btn.BackgroundColor3 = Color3.fromRGB(20, 10, 10)
+        btn.TextColor3 = Color3.fromRGB(255, 50, 50)
         btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 15
+        btn.TextSize = 16
         btn.Text = "MX"
         btn.Active = true
         btn.Draggable = true
+        btn.ZIndex = 999999
+        btn.Parent = sg
 
         local corner = Instance.new("UICorner", btn)
-        corner.CornerRadius = UDim.new(0, 12)
+        corner.CornerRadius = UDim.new(0, 14)
 
         local stroke = Instance.new("UIStroke", btn)
-        stroke.Color = Color3.fromRGB(0, 230, 255)
-        stroke.Thickness = 2
+        stroke.Color = Color3.fromRGB(255, 50, 50)
+        stroke.Thickness = 2.5
+
+        -- Glow effect animation
+        task.spawn(function()
+            while btn and btn.Parent do
+                for i = 0, 1, 0.02 do
+                    if not btn or not btn.Parent then break end
+                    stroke.Transparency = i * 0.5
+                    task.wait(0.03)
+                end
+                for i = 1, 0, -0.02 do
+                    if not btn or not btn.Parent then break end
+                    stroke.Transparency = i * 0.5
+                    task.wait(0.03)
+                end
+            end
+        end)
 
         btn.MouseButton1Click:Connect(function()
-            if WindowInstance then
-                if WindowInstance.Root then
-                    WindowInstance.Root.Enabled = not WindowInstance.Root.Enabled
-                elseif WindowInstance.Minimize then
-                    WindowInstance:Minimize()
+            MX_HubVisible = not MX_HubVisible
+
+            -- Find and toggle ALL Fluent ScreenGuis in CoreGui
+            for _, gui in ipairs(coreGui:GetChildren()) do
+                if gui:IsA("ScreenGui") and gui.Name ~= "MX_ToggleGui" and gui.Name ~= "MX_WhiteScreen" then
+                    -- Check if it's the Fluent window (has specific children)
+                    if gui:FindFirstChild("Main") or gui:FindFirstChild("Holder") or gui.Name:find("Fluent") or gui.Name:find("Window") then
+                        gui.Enabled = MX_HubVisible
+                    end
                 end
+            end
+
+            -- Also search gethui() for some executors
+            pcall(function()
+                if gethui then
+                    for _, gui in ipairs(gethui():GetChildren()) do
+                        if gui:IsA("ScreenGui") and gui.Name ~= "MX_ToggleGui" then
+                            if gui:FindFirstChild("Main") or gui:FindFirstChild("Holder") then
+                                gui.Enabled = MX_HubVisible
+                            end
+                        end
+                    end
+                end
+            end)
+
+            -- Change button text to indicate state
+            if MX_HubVisible then
+                btn.Text = "MX"
+                btn.TextColor3 = Color3.fromRGB(255, 50, 50)
+            else
+                btn.Text = "MX"
+                btn.TextColor3 = Color3.fromRGB(150, 30, 30)
             end
         end)
     end)
@@ -418,7 +466,7 @@ local Window = Fluent:CreateWindow({
 })
 
 -- Create floating toggle icon button
-createFloatingToggle(Window)
+createFloatingToggle()
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Main / Auto Farm", Icon = "home" }),
