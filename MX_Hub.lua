@@ -1,7 +1,7 @@
 --[[
 ================================================================================
                     MX HUB - BLOX FRUITS PREMIUM SCRIPT HUB
-               Version: 3.0 Ultra Complete (Latest Update 24)
+               Version: 3.1 Ultra Complete (Latest Update 24)
                   Supported: Sea 1 (First), Sea 2 (Second), Sea 3 (Third)
     Aesthetic: Modern Futuristic Dark-Themed UI with Acrylic & Smooth Animations
 ================================================================================
@@ -44,7 +44,7 @@ function Security.GetSafeSpeed(speed)
 end
 
 -- ============================================================================
--- 2. UTILS MODULES
+-- 2. UTILS MODULES & WATER WALK ENGINE
 -- ============================================================================
 
 -- CONFIG MANAGER
@@ -54,7 +54,7 @@ ConfigManager.Settings = {
     AutoGrabFruit = false, AutoSeaBeast = false, AutoFlowers = false, AutoBoss = false, SelectedBoss = "Rip Indra [Boss]",
     AutoMaterial = false, SelectedMaterial = "Bones", AutoKitsuneWisp = false,
     SelectedRaidChip = "Dough", AutoRaidLoop = false, HitboxExtender = false, SafeHealthRun = false,
-    AntiAFK = true, FPSBooster = false, WhiteScreen = false
+    AntiAFK = true, FPSBooster = false, WhiteScreen = false, WaterWalk = true
 }
 
 function ConfigManager.Init()
@@ -74,6 +74,38 @@ function ConfigManager.Load()
     end
     return ConfigManager.Settings
 end
+
+-- WATER WALK ENGINE (المشي فوق الماء من دون أضرار)
+local WaterWalkEngine = { Enabled = true }
+local WaterPart = nil
+local WaterConn = nil
+
+function WaterWalkEngine.Start()
+    if WaterConn then return end
+    WaterConn = RunService.RenderStepped:Connect(function()
+        if not WaterWalkEngine.Enabled then return end
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            if not WaterPart or not WaterPart.Parent then
+                WaterPart = Instance.new("Part")
+                WaterPart.Name = Security.RandomString(10)
+                WaterPart.Size = Vector3.new(60, 2, 60)
+                WaterPart.Anchored = true
+                WaterPart.Transparency = 0.8
+                WaterPart.Color = Color3.fromRGB(0, 230, 255)
+                WaterPart.Parent = Workspace
+            end
+            if hrp.Position.Y < 30 and hrp.Position.Y > -15 then
+                WaterPart.CFrame = CFrame.new(hrp.Position.X, 1, hrp.Position.Z)
+                WaterPart.CanCollide = true
+            else
+                WaterPart.CanCollide = false
+            end
+        end
+    end)
+end
+WaterWalkEngine.Start()
 
 -- PERFORMANCE & ANTI-AFK
 local Performance = { AntiAFKEnabled = false, FPSBoosterEnabled = false, WhiteScreenEnabled = false }
@@ -155,7 +187,7 @@ function RemotesEngine.Invoke(...)
     return nil
 end
 
--- TWEEN & NAVIGATION ENGINE
+-- TWEEN & NAVIGATION ENGINE (طيران ثابت على مستوى الماء وتأقلم مع ارتفاع الجزر)
 local NavigationEngine = { Speed = 280, IsTweening = false, CurrentTween = nil }
 local NoclipConn = nil
 
@@ -194,8 +226,15 @@ function NavigationEngine.TweenTo(targetCF, customSpeed, onComplete)
     NavigationEngine.SetNoclip(true)
     hum.Sit = false
 
+    -- Flight Altitude Safety Manager (طيران ثابت فوق البحر وانخفاض عند الوصول للجزيرة)
+    local flightTargetCF = targetCF
+    if dist > 70 then
+        local flightY = math.max(targetCF.Y + 25, 45)
+        flightTargetCF = CFrame.new(targetCF.Position.X, flightY, targetCF.Position.Z)
+    end
+
     local travelTime = dist / safeSpeed
-    local tween = TweenService:Create(hrp, TweenInfo.new(travelTime, Enum.EasingStyle.Linear), { CFrame = targetCF })
+    local tween = TweenService:Create(hrp, TweenInfo.new(travelTime, Enum.EasingStyle.Linear), { CFrame = flightTargetCF })
     NavigationEngine.CurrentTween = tween
 
     local conn
@@ -203,7 +242,11 @@ function NavigationEngine.TweenTo(targetCF, customSpeed, onComplete)
         NavigationEngine.IsTweening = false
         NavigationEngine.SetNoclip(false)
         if conn then conn:Disconnect() end
-        if status == Enum.PlaybackState.Completed and onComplete then onComplete() end
+        if status == Enum.PlaybackState.Completed then
+            -- Touchdown on island ground
+            hrp.CFrame = targetCF
+            if onComplete then onComplete() end
+        end
     end)
     tween:Play()
     return tween
@@ -319,7 +362,50 @@ local function getQuestData(level)
 end
 
 -- ============================================================================
--- 4. FLUENT UI & FULL MODULE BINDINGS
+-- 4. FLOATING UI TOGGLE BUTTON (أيقونة عائمة لفتح وإغلاق القائمة)
+-- ============================================================================
+local function createFloatingToggle(WindowInstance)
+    pcall(function()
+        local coreGui = game:GetService("CoreGui")
+        local existing = coreGui:FindFirstChild("MX_ToggleGui")
+        if existing then existing:Destroy() end
+
+        local sg = Instance.new("ScreenGui", coreGui)
+        sg.Name = "MX_ToggleGui"
+        sg.ResetOnSpawn = false
+
+        local btn = Instance.new("TextButton", sg)
+        btn.Size = UDim2.new(0, 48, 0, 48)
+        btn.Position = UDim2.new(0, 15, 0.45, 0)
+        btn.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+        btn.TextColor3 = Color3.fromRGB(0, 230, 255)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 15
+        btn.Text = "MX"
+        btn.Active = true
+        btn.Draggable = true
+
+        local corner = Instance.new("UICorner", btn)
+        corner.CornerRadius = UDim.new(0, 12)
+
+        local stroke = Instance.new("UIStroke", btn)
+        stroke.Color = Color3.fromRGB(0, 230, 255)
+        stroke.Thickness = 2
+
+        btn.MouseButton1Click:Connect(function()
+            if WindowInstance then
+                if WindowInstance.Root then
+                    WindowInstance.Root.Enabled = not WindowInstance.Root.Enabled
+                elseif WindowInstance.Minimize then
+                    WindowInstance:Minimize()
+                end
+            end
+        end)
+    end)
+end
+
+-- ============================================================================
+-- 5. FLUENT UI & MODULE BINDINGS
 -- ============================================================================
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
@@ -328,8 +414,11 @@ Performance.SetAntiAFK(cfg.AntiAFK)
 Performance.SetFPSBooster(cfg.FPSBooster)
 
 local Window = Fluent:CreateWindow({
-    Title = "MX HUB | Blox Fruits [v3.0 Complete]", SubTitle = "by MX Development Team", TabWidth = 165, Size = UDim2.fromOffset(620, 500), Acrylic = true, Theme = "Darker", MinimizeKey = Enum.KeyCode.RightControl
+    Title = "MX HUB | Blox Fruits [v3.1 Complete]", SubTitle = "by MX Development Team", TabWidth = 165, Size = UDim2.fromOffset(620, 500), Acrylic = true, Theme = "Darker", MinimizeKey = Enum.KeyCode.RightControl
 })
+
+-- Create floating toggle icon button
+createFloatingToggle(Window)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Main / Auto Farm", Icon = "home" }),
@@ -344,9 +433,7 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings & Perf", Icon = "settings" })
 }
 
--- ----------------------------------------------------------------------------
 -- TAB 1: MAIN FARM
--- ----------------------------------------------------------------------------
 Tabs.Main:AddSection("Auto Level & Combat Engine (Level 1 - 2800)")
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarmLevel", { Title = "Auto Farm Level (1 - 2800 Max)", Default = cfg.AutoFarmLevel })
 AutoFarmToggle:OnChanged(function(val)
@@ -414,10 +501,8 @@ Tabs.Main:AddButton({
     end
 })
 
--- ----------------------------------------------------------------------------
 -- TAB 2: BOSSES & MATERIALS FARM
--- ----------------------------------------------------------------------------
-Tabs.BossMat:AddSection("All Bosses Auto Farm (تفريم كل البوسات)")
+Tabs.BossMat:AddSection("All Bosses Auto Farm")
 local bossDropdown = Tabs.BossMat:AddDropdown("SelectBoss", { Title = "Select Target Boss", Values = BossDatabase, Multi = false, Default = 1 })
 bossDropdown:OnChanged(function(v) cfg.SelectedBoss = v ConfigManager.Save() end)
 
@@ -443,7 +528,7 @@ AutoBossToggle:OnChanged(function(val)
     end
 end)
 
-Tabs.BossMat:AddSection("All Materials Auto Farm (تفريم جميع المواد والحرف)")
+Tabs.BossMat:AddSection("All Materials Auto Farm")
 local matDropdown = Tabs.BossMat:AddDropdown("SelectMat", {
     Title = "Select Material",
     Values = { "Bones", "Ectoplasm", "Scrap Metal", "Dragon Scale", "Conjured Cocoa", "Vampire Fang", "Mystic Droplet", "Mini Tusk" },
@@ -479,9 +564,7 @@ AutoMatToggle:OnChanged(function(val)
     end
 end)
 
--- ----------------------------------------------------------------------------
 -- TAB 3: SWORDS & MYTHICS
--- ----------------------------------------------------------------------------
 Tabs.Swords:AddSection("Mythic Swords & Item Unlocks")
 Tabs.Swords:AddButton({ Title = "Check Dealer & Buy Legendary Swords (TTK)", Callback = function()
     RemotesEngine.Invoke("ValuableCheck")
@@ -497,9 +580,7 @@ Tabs.Swords:AddButton({ Title = "Auto Soul Guitar Puzzle", Callback = function()
     end)
 end })
 
--- ----------------------------------------------------------------------------
 -- TAB 4: FRUITS & INVENTORY
--- ----------------------------------------------------------------------------
 Tabs.Fruits:AddSection("Fruit Gacha & Store")
 Tabs.Fruits:AddButton({ Title = "Buy Random Fruit (Zioles Cousin)", Callback = function()
     local res = RemotesEngine.Invoke("Cousin", "Buy")
@@ -532,9 +613,7 @@ GrabberToggle:OnChanged(function(val)
     end
 end)
 
--- ----------------------------------------------------------------------------
 -- TAB 5: SEA EVENTS & KITSUNE ISLAND
--- ----------------------------------------------------------------------------
 Tabs.Sea:AddSection("Sea Beasts, Leviathan & Kitsune Shrine")
 local SBToggle = Tabs.Sea:AddToggle("AutoSeaBeast", { Title = "Auto Sea Beast / Kraken Farm", Default = cfg.AutoSeaBeast })
 SBToggle:OnChanged(function(val)
@@ -573,9 +652,7 @@ Tabs.Sea:AddButton({ Title = "Kitsune Shrine Offer Azure Wisps", Callback = func
     Fluent:Notify({ Title = "Kitsune Shrine", Content = "Offered Azure Wisps! Result: " .. tostring(res), Duration = 5 })
 end })
 
--- ----------------------------------------------------------------------------
 -- TAB 6: RACE V1 - V4
--- ----------------------------------------------------------------------------
 Tabs.Race:AddSection("Race Awakening")
 Tabs.Race:AddButton({ Title = "Auto Collect Red & Blue Flowers (Race V2)", Callback = function()
     for _, fName in ipairs({"Flower1", "Flower2"}) do
@@ -595,15 +672,11 @@ Tabs.Race:AddButton({ Title = "Run Race V4 Temple Entry & Lever Pull", Callback 
     end)
 end })
 
--- ----------------------------------------------------------------------------
 -- TAB 7: RAIDS
--- ----------------------------------------------------------------------------
 Tabs.Raids:AddSection("Raids Automation")
 Tabs.Raids:AddButton({ Title = "Buy Selected Microchip", Callback = function() RemotesEngine.Invoke("RaidsNpc", "Select", "Dough") end })
 
--- ----------------------------------------------------------------------------
 -- TAB 8: PVP & BOUNTY
--- ----------------------------------------------------------------------------
 Tabs.PVP:AddSection("PvP & Hitbox Options")
 local HitboxToggle = Tabs.PVP:AddToggle("HitboxExtender", { Title = "Hitbox Extender (Expand Head/HRP)", Default = cfg.HitboxExtender })
 HitboxToggle:OnChanged(function(v)
@@ -620,18 +693,14 @@ HitboxToggle:OnChanged(function(v)
     else pcall(function() RunService:UnbindFromRenderStep("MX_Hitbox") end) end
 end)
 
--- ----------------------------------------------------------------------------
 -- TAB 9: TELEPORTS
--- ----------------------------------------------------------------------------
 Tabs.Teleports:AddSection("Sea World Travel")
 Tabs.Teleports:AddButton({ Title = "Travel to Sea 1", Callback = function() RemotesEngine.Invoke("TravelMain") end })
 Tabs.Teleports:AddButton({ Title = "Travel to Sea 2", Callback = function() RemotesEngine.Invoke("TravelDressrosa") end })
 Tabs.Teleports:AddButton({ Title = "Travel to Sea 3", Callback = function() RemotesEngine.Invoke("TravelZ") end })
 
--- ----------------------------------------------------------------------------
 -- TAB 10: SETTINGS
--- ----------------------------------------------------------------------------
-Tabs.Settings:AddSection("Performance & Optimization")
+Tabs.Settings:AddSection("Performance & Water Walk")
 local AntiAFKToggle = Tabs.Settings:AddToggle("AntiAFK", { Title = "Anti-AFK Disconnect Preventer", Default = cfg.AntiAFK })
 AntiAFKToggle:OnChanged(function(val) cfg.AntiAFK = val ConfigManager.Save() Performance.SetAntiAFK(val) end)
 
@@ -641,7 +710,10 @@ FPSBoosterToggle:OnChanged(function(val) cfg.FPSBooster = val ConfigManager.Save
 local WhiteScreenToggle = Tabs.Settings:AddToggle("WhiteScreen", { Title = "Overnight GPU Saver Mode (3D Rendering Off)", Default = cfg.WhiteScreen })
 WhiteScreenToggle:OnChanged(function(val) cfg.WhiteScreen = val ConfigManager.Save() Performance.SetWhiteScreen(val) end)
 
-Window:SelectTab(1)
-Fluent:Notify({ Title = "MX Hub Ultimate Active", Content = "Full Update 24 Coverage: Auto Farm 2800, Bosses, Materials, Kitsune Shrine, & Fighting Styles loaded!", Duration = 6 })
+local WaterWalkToggle = Tabs.Settings:AddToggle("WaterWalk", { Title = "Water Walk (المشي فوق الماء)", Default = cfg.WaterWalk })
+WaterWalkToggle:OnChanged(function(val) cfg.WaterWalk = val WaterWalkEngine.Enabled = val ConfigManager.Save() end)
 
-print("[MX Hub] Complete Script Suite Loaded for Latest Blox Fruits Update!")
+Window:SelectTab(1)
+Fluent:Notify({ Title = "MX Hub v3.1 Loaded", Content = "Floating Toggle Icon, Water Walk, & Altitude Flight Control Active!", Duration = 6 })
+
+print("[MX Hub v3.1] Updated with Floating Toggle Icon, Water Walk, & Flight Altitude Manager!")
