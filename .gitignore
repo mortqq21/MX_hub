@@ -1,0 +1,5 @@
+# Local cache and temporary files
+.gemini/
+*.tmp
+config.json
+MX_Hub/config.json
