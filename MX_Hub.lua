@@ -188,7 +188,7 @@ function RemotesEngine.Invoke(...)
 end
 
 -- TWEEN & NAVIGATION ENGINE (طيران ثابت على مستوى الماء وتأقلم مع ارتفاع الجزر)
-local NavigationEngine = { Speed = 280, IsTweening = false, CurrentTween = nil }
+local NavigationEngine = { Speed = 280, IsTweening = false, CurrentTween = nil, LastTargetPosition = Vector3.new(0,0,0) }
 local NoclipConn = nil
 
 function NavigationEngine.SetNoclip(state)
@@ -216,17 +216,26 @@ function NavigationEngine.TweenTo(targetCF, customSpeed, onComplete)
     local dist = (hrp.Position - targetCF.Position).Magnitude
 
     if dist < 8 then
+        if NavigationEngine.CurrentTween then
+            NavigationEngine.CurrentTween:Cancel()
+            NavigationEngine.IsTweening = false
+        end
         hrp.CFrame = targetCF
         if onComplete then onComplete() end
         return
     end
 
+    -- If already tweening smoothly to roughly the same position, don't interrupt!
+    if NavigationEngine.IsTweening and (NavigationEngine.LastTargetPosition - targetCF.Position).Magnitude < 10 then
+        return
+    end
+
     if NavigationEngine.CurrentTween then NavigationEngine.CurrentTween:Cancel() end
     NavigationEngine.IsTweening = true
+    NavigationEngine.LastTargetPosition = targetCF.Position
     NavigationEngine.SetNoclip(true)
     hum.Sit = false
 
-    -- Flight Altitude Safety Manager (طيران ثابت فوق البحر وانخفاض عند الوصول للجزيرة)
     local flightTargetCF = targetCF
     if dist > 70 then
         local flightY = math.max(targetCF.Y + 25, 45)
@@ -243,7 +252,6 @@ function NavigationEngine.TweenTo(targetCF, customSpeed, onComplete)
         NavigationEngine.SetNoclip(false)
         if conn then conn:Disconnect() end
         if status == Enum.PlaybackState.Completed then
-            -- Touchdown on island ground
             hrp.CFrame = targetCF
             if onComplete then onComplete() end
         end
