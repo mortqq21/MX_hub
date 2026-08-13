@@ -442,7 +442,7 @@ end
 -- ============================================================================
 local MX_HubVisible = true
 
-local function createFloatingToggle()
+local function createFloatingToggle(FluentWindow)
     pcall(function()
         local coreGui = game:GetService("CoreGui")
         local existing = coreGui:FindFirstChild("MX_ToggleGui")
@@ -451,7 +451,7 @@ local function createFloatingToggle()
         local sg = Instance.new("ScreenGui")
         sg.Name = "MX_ToggleGui"
         sg.ResetOnSpawn = false
-        sg.DisplayOrder = 999999
+        sg.DisplayOrder = 9999999
         sg.Parent = coreGui
 
         local btn = Instance.new("TextButton")
@@ -464,7 +464,7 @@ local function createFloatingToggle()
         btn.Text = "MX"
         btn.Active = true
         btn.Draggable = true
-        btn.ZIndex = 999999
+        btn.ZIndex = 9999999
         btn.Parent = sg
 
         local corner = Instance.new("UICorner", btn)
@@ -493,30 +493,35 @@ local function createFloatingToggle()
         btn.MouseButton1Click:Connect(function()
             MX_HubVisible = not MX_HubVisible
 
-            -- Find and toggle ALL Fluent ScreenGuis in CoreGui
-            for _, gui in ipairs(coreGui:GetChildren()) do
-                if gui:IsA("ScreenGui") and gui.Name ~= "MX_ToggleGui" and gui.Name ~= "MX_WhiteScreen" then
-                    -- Check if it's the Fluent window (has specific children)
-                    if gui:FindFirstChild("Main") or gui:FindFirstChild("Holder") or gui.Name:find("Fluent") or gui.Name:find("Window") then
-                        gui.Enabled = MX_HubVisible
+            pcall(function()
+                if FluentWindow then
+                    if FluentWindow.Root then
+                        FluentWindow.Root.Enabled = MX_HubVisible
                     end
                 end
-            end
+            end)
 
-            -- Also search gethui() for some executors
+            -- Also fallback to searching all ScreenGuis in CoreGui & gethui
             pcall(function()
-                if gethui then
-                    for _, gui in ipairs(gethui():GetChildren()) do
-                        if gui:IsA("ScreenGui") and gui.Name ~= "MX_ToggleGui" then
-                            if gui:FindFirstChild("Main") or gui:FindFirstChild("Holder") then
-                                gui.Enabled = MX_HubVisible
-                            end
+                for _, g in ipairs(coreGui:GetChildren()) do
+                    if g:IsA("ScreenGui") and g.Name ~= "MX_ToggleGui" and g.Name ~= "MX_KeySystemGui" and g.Name ~= "MX_WhiteScreen" then
+                        if g:FindFirstChild("CanvasGroup") or g:FindFirstChild("Frame") or g:FindFirstChild("Main") or g.Name:find("Fluent") then
+                            g.Enabled = MX_HubVisible
                         end
                     end
                 end
             end)
 
-            -- Change button text to indicate state
+            pcall(function()
+                if gethui then
+                    for _, g in ipairs(gethui():GetChildren()) do
+                        if g:IsA("ScreenGui") and g.Name ~= "MX_ToggleGui" then
+                            g.Enabled = MX_HubVisible
+                        end
+                    end
+                end
+            end)
+
             if MX_HubVisible then
                 btn.Text = "MX"
                 btn.TextColor3 = Color3.fromRGB(255, 50, 50)
@@ -714,7 +719,7 @@ local function initializeMXHub()
     })
 
     -- Create floating toggle icon button
-    createFloatingToggle()
+    createFloatingToggle(Window)
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Main / Auto Farm", Icon = "home" }),
