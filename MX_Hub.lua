@@ -737,13 +737,37 @@ local Tabs = {
 -- TAB 1: MAIN FARM
 Tabs.Main:AddSection("Auto Level & Combat Engine (Level 1 - 2800)")
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarmLevel", { Title = "Auto Farm Level (1 - 2800 Max)", Default = cfg.AutoFarmLevel })
+
+local lastQuestAttempt = 0
+
+local function hasActiveQuest()
+    local active = false
+    pcall(function()
+        local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+        if mainGui then
+            local qFrame = mainGui:FindFirstChild("Quest")
+            if qFrame then
+                if qFrame.Visible then
+                    active = true
+                else
+                    local container = qFrame:FindFirstChild("Container")
+                    if container and container.Visible then
+                        active = true
+                    end
+                end
+            end
+        end
+    end)
+    return active
+end
+
 AutoFarmToggle:OnChanged(function(val)
     cfg.AutoFarmLevel = val ConfigManager.Save()
     if val then
         FastAttackEngine.Start()
         task.spawn(function()
             while cfg.AutoFarmLevel do
-                task.wait(0.1)
+                task.wait(0.15)
 
                 local char = LocalPlayer.Character
                 if not char then task.wait(1) continue end
@@ -759,7 +783,6 @@ AutoFarmToggle:OnChanged(function(val)
                 local currentSea = getCurrentSea()
                 if requiredSea ~= currentSea then
                     Fluent:Notify({ Title = "Sea Travel Required", Content = "Level " .. lvl .. " requires Sea " .. requiredSea .. ". You are in Sea " .. currentSea .. ". Traveling...", Duration = 8 })
-                    -- Try to travel to correct sea via game teleport
                     pcall(function()
                         local seaIds = { [1] = 2753915549, [2] = 4442272183, [3] = 7449423635 }
                         game:GetService("TeleportService"):Teleport(seaIds[requiredSea], LocalPlayer)
@@ -768,28 +791,25 @@ AutoFarmToggle:OnChanged(function(val)
                     continue
                 end
 
-                -- Check if quest is active (look for quest frame in PlayerGui)
-                local hasQuest = false
-                pcall(function()
-                    local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
-                    if mainGui then
-                        local questFrame = mainGui:FindFirstChild("Quest")
-                        if questFrame and questFrame.Visible then
-                            hasQuest = true
+                if not hasActiveQuest() then
+                    -- ===== STEP 1: Go to Quest NPC & Accept Quest (No Spam) =====
+                    FastAttackEngine.StopBring()
+
+                    local distToNPC = (hrp.Position - qData.QuestNPC.Position).Magnitude
+                    if distToNPC > 15 then
+                        -- Fly towards the Quest NPC safely
+                        NavigationEngine.TweenTo(qData.QuestNPC, 280)
+                    else
+                        -- We are at the NPC, stop tween and try accepting quest ONCE every 2.5 seconds
+                        if (tick() - lastQuestAttempt) > 2.5 then
+                            lastQuestAttempt = tick()
+                            hrp.CFrame = qData.QuestNPC
+                            task.wait(0.2)
+                            -- Send real Blox Fruits quest start remote
+                            RemotesEngine.Invoke("StartQuest", qData.QuestName, qData.QuestLevel)
+                            task.wait(0.5)
                         end
                     end
-                end)
-
-                if not hasQuest then
-                    -- ===== STEP 1: Go to Quest NPC and accept quest =====
-                    FastAttackEngine.StopBring()
-                    NavigationEngine.TweenTo(qData.QuestNPC, 280, function()
-                        task.wait(0.3)
-                        -- Accept quest via CommF_ (the real Blox Fruits remote)
-                        RemotesEngine.Invoke("StartQuest", qData.QuestName, qData.QuestLevel)
-                        task.wait(0.5)
-                    end)
-                    task.wait(1)
                 else
                     -- ===== STEP 2: Quest is active, find and kill mobs =====
                     local enemies = Workspace:FindFirstChild("Enemies")
@@ -820,13 +840,13 @@ AutoFarmToggle:OnChanged(function(val)
                         local attackPos = mobHRP.CFrame * CFrame.new(0, 8, 0)
                         hrp.CFrame = attackPos
 
-                        -- Bring nearby mobs to you for faster farming
+                        -- Bring nearby mobs to player position
                         FastAttackEngine.StartBring(qData.MobName, hrp.CFrame)
                     else
                         -- No alive mobs found, go to mob spawn area and wait
                         FastAttackEngine.StopBring()
                         NavigationEngine.TweenTo(qData.MobArea * CFrame.new(0, 10, 0), 280)
-                        task.wait(2)
+                        task.wait(1.5)
                     end
                 end
             end
