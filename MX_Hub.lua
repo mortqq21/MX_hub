@@ -325,19 +325,72 @@ function FastAttackEngine.StopBring()
 end
 
 -- ============================================================================
--- 3. DATA TABLES & QUEST DATABASE (1 - 2800 MAX LEVEL)
+-- 3. DATA TABLES & QUEST DATABASE (1 - 2800 COMPLETE ALL SEAS)
 -- ============================================================================
-local QuestDatabase = {
-    { MinLevel = 1, MaxLevel = 10, QuestName = "BanditQuest1", QuestLevel = 1, MobName = "Bandit", CFrame = CFrame.new(1059, 17, 1546), QuestNPC = CFrame.new(1059, 17, 1546) },
-    { MinLevel = 10, MaxLevel = 30, QuestName = "JungleQuest", QuestLevel = 1, MobName = "Monkey", CFrame = CFrame.new(-1602, 37, 153), QuestNPC = CFrame.new(-1598, 37, 153) },
-    { MinLevel = 30, MaxLevel = 60, QuestName = "BuggyQuest1", QuestLevel = 1, MobName = "Pirate", CFrame = CFrame.new(-1210, 5, 3915), QuestNPC = CFrame.new(-1140, 5, 3858) },
-    { MinLevel = 60, MaxLevel = 90, QuestName = "DesertQuest", QuestLevel = 1, MobName = "Desert Bandit", CFrame = CFrame.new(890, 7, 4380), QuestNPC = CFrame.new(894, 7, 4390) },
-    { MinLevel = 90, MaxLevel = 120, QuestName = "SnowQuest", QuestLevel = 1, MobName = "Snow Bandit", CFrame = CFrame.new(1280, 87, -1290), QuestNPC = CFrame.new(1385, 87, -1298) },
-    { MinLevel = 120, MaxLevel = 700, QuestName = "MarineQuest2", QuestLevel = 1, MobName = "Chief Petty Officer", CFrame = CFrame.new(-4850, 21, 4300), QuestNPC = CFrame.new(-5035, 29, 4325) },
-    { MinLevel = 700, MaxLevel = 1500, QuestName = "Area1Quest", QuestLevel = 1, MobName = "Raider", CFrame = CFrame.new(-450, 73, 2980), QuestNPC = CFrame.new(-425, 73, 1835) },
-    { MinLevel = 1500, MaxLevel = 2499, QuestName = "TikiQuest1", QuestLevel = 1, MobName = "Isle Outlaw", CFrame = CFrame.new(-16500, 55, 5500), QuestNPC = CFrame.new(-16200, 55, 5450) },
-    { MinLevel = 2500, MaxLevel = 2800, QuestName = "TikiQuest2", QuestLevel = 2, MobName = "Isle Champion", CFrame = CFrame.new(-16800, 55, 5900), QuestNPC = CFrame.new(-16200, 55, 5450) }
+
+-- ===== SEA 1 (Old World) =====
+local Sea1Quests = {
+    { MinLevel = 1,    MaxLevel = 9,    QuestName = "BanditQuest1",   QuestLevel = 1, MobName = "Bandit",             NPC = "BanditQuest1", MobArea = CFrame.new(1059, 17, 1546),   QuestNPC = CFrame.new(1059, 15, 1547) },
+    { MinLevel = 10,   MaxLevel = 14,   QuestName = "BanditQuest1",   QuestLevel = 2, MobName = "Bandit",             NPC = "BanditQuest1", MobArea = CFrame.new(1059, 17, 1546),   QuestNPC = CFrame.new(1059, 15, 1547) },
+    { MinLevel = 15,   MaxLevel = 29,   QuestName = "JungleQuest",    QuestLevel = 1, MobName = "Monkey",             NPC = "JungleQuest",  MobArea = CFrame.new(-1602, 37, 153),   QuestNPC = CFrame.new(-1598, 36, 153) },
+    { MinLevel = 30,   MaxLevel = 59,   QuestName = "BuggyQuest1",    QuestLevel = 1, MobName = "Pirate",             NPC = "BuggyQuest1",  MobArea = CFrame.new(-1210, 5, 3915),   QuestNPC = CFrame.new(-1140, 4.5, 3858) },
+    { MinLevel = 60,   MaxLevel = 74,   QuestName = "DesertQuest",    QuestLevel = 1, MobName = "Desert Bandit",      NPC = "DesertQuest",  MobArea = CFrame.new(890, 7, 4380),     QuestNPC = CFrame.new(894, 6.5, 4390) },
+    { MinLevel = 75,   MaxLevel = 89,   QuestName = "DesertQuest",    QuestLevel = 2, MobName = "Desert Officer",     NPC = "DesertQuest",  MobArea = CFrame.new(890, 7, 4380),     QuestNPC = CFrame.new(894, 6.5, 4390) },
+    { MinLevel = 90,   MaxLevel = 99,   QuestName = "SnowQuest",      QuestLevel = 1, MobName = "Snow Bandit",        NPC = "SnowQuest",    MobArea = CFrame.new(1280, 87, -1290),  QuestNPC = CFrame.new(1385, 87, -1298) },
+    { MinLevel = 100,  MaxLevel = 119,  QuestName = "SnowQuest",      QuestLevel = 2, MobName = "Snowman",            NPC = "SnowQuest",    MobArea = CFrame.new(1280, 87, -1290),  QuestNPC = CFrame.new(1385, 87, -1298) },
+    { MinLevel = 120,  MaxLevel = 149,  QuestName = "IceSideQuest",   QuestLevel = 1, MobName = "Chief Petty Officer", NPC = "IceSideQuest", MobArea = CFrame.new(1579, 87, -1796),  QuestNPC = CFrame.new(1579, 87, -1796) },
+    { MinLevel = 150,  MaxLevel = 174,  QuestName = "SkyQuest",       QuestLevel = 1, MobName = "Sky Bandit",         NPC = "SkyQuest",     MobArea = CFrame.new(-4850, 717, 4300), QuestNPC = CFrame.new(-4850, 717, 4300) },
+    { MinLevel = 175,  MaxLevel = 199,  QuestName = "SkyQuest",       QuestLevel = 2, MobName = "Dark Master",        NPC = "SkyQuest",     MobArea = CFrame.new(-4850, 717, 4300), QuestNPC = CFrame.new(-4850, 717, 4300) },
+    { MinLevel = 200,  MaxLevel = 249,  QuestName = "ColosseumQuest", QuestLevel = 1, MobName = "Toga Warrior",       NPC = "ColosseumQuest", MobArea = CFrame.new(-1450, 7, -2908), QuestNPC = CFrame.new(-1450, 7, -2908) },
+    { MinLevel = 250,  MaxLevel = 274,  QuestName = "ColosseumQuest", QuestLevel = 2, MobName = "Gladiator",          NPC = "ColosseumQuest", MobArea = CFrame.new(-1450, 7, -2908), QuestNPC = CFrame.new(-1450, 7, -2908) },
+    { MinLevel = 275,  MaxLevel = 299,  QuestName = "MagmaQuest",     QuestLevel = 1, MobName = "Military Soldier",   NPC = "MagmaQuest",   MobArea = CFrame.new(-5314, 12, 8506),  QuestNPC = CFrame.new(-5314, 12, 8506) },
+    { MinLevel = 300,  MaxLevel = 374,  QuestName = "MagmaQuest",     QuestLevel = 2, MobName = "Military Spy",       NPC = "MagmaQuest",   MobArea = CFrame.new(-5314, 12, 8506),  QuestNPC = CFrame.new(-5314, 12, 8506) },
+    { MinLevel = 375,  MaxLevel = 449,  QuestName = "UnderwaterQuest", QuestLevel = 1, MobName = "Fishman Warrior",   NPC = "UnderwaterQuest", MobArea = CFrame.new(61163, 12, 1819), QuestNPC = CFrame.new(61163, 12, 1819) },
+    { MinLevel = 450,  MaxLevel = 524,  QuestName = "UnderwaterQuest", QuestLevel = 2, MobName = "Fishman Commando",  NPC = "UnderwaterQuest", MobArea = CFrame.new(61163, 12, 1819), QuestNPC = CFrame.new(61163, 12, 1819) },
+    { MinLevel = 525,  MaxLevel = 599,  QuestName = "FountainQuest",   QuestLevel = 1, MobName = "God's Guard",       NPC = "FountainQuest",  MobArea = CFrame.new(-4903, 841, -1911), QuestNPC = CFrame.new(-4903, 841, -1911) },
+    { MinLevel = 600,  MaxLevel = 699,  QuestName = "FountainQuest",   QuestLevel = 2, MobName = "Shanda",            NPC = "FountainQuest",  MobArea = CFrame.new(-4903, 841, -1911), QuestNPC = CFrame.new(-4903, 841, -1911) },
 }
+
+-- ===== SEA 2 (New World) =====
+local Sea2Quests = {
+    { MinLevel = 700,  MaxLevel = 774,  QuestName = "Area1Quest",      QuestLevel = 1, MobName = "Raider",              NPC = "Area1Quest",      MobArea = CFrame.new(-425, 73, 1835),   QuestNPC = CFrame.new(-425, 73, 1835) },
+    { MinLevel = 775,  MaxLevel = 849,  QuestName = "Area1Quest",      QuestLevel = 2, MobName = "Mercenary",           NPC = "Area1Quest",      MobArea = CFrame.new(-425, 73, 1835),   QuestNPC = CFrame.new(-425, 73, 1835) },
+    { MinLevel = 850,  MaxLevel = 924,  QuestName = "Area2Quest",      QuestLevel = 1, MobName = "Swan Pirate",         NPC = "Area2Quest",      MobArea = CFrame.new(636, 73, 918),     QuestNPC = CFrame.new(636, 73, 918) },
+    { MinLevel = 925,  MaxLevel = 999,  QuestName = "Area2Quest",      QuestLevel = 2, MobName = "Factory Staff",       NPC = "Area2Quest",      MobArea = CFrame.new(636, 73, 918),     QuestNPC = CFrame.new(636, 73, 918) },
+    { MinLevel = 1000, MaxLevel = 1049, QuestName = "HauntedQuest1",   QuestLevel = 1, MobName = "Zombie",              NPC = "HauntedQuest1",   MobArea = CFrame.new(-5150, 80, 4240),  QuestNPC = CFrame.new(-5150, 80, 4240) },
+    { MinLevel = 1050, MaxLevel = 1099, QuestName = "HauntedQuest1",   QuestLevel = 2, MobName = "Vampire",             NPC = "HauntedQuest1",   MobArea = CFrame.new(-5150, 80, 4240),  QuestNPC = CFrame.new(-5150, 80, 4240) },
+    { MinLevel = 1100, MaxLevel = 1174, QuestName = "SnowMountainQuest", QuestLevel = 1, MobName = "Snow Trooper",      NPC = "SnowMountainQuest", MobArea = CFrame.new(612, 400, -5100), QuestNPC = CFrame.new(612, 400, -5100) },
+    { MinLevel = 1175, MaxLevel = 1249, QuestName = "SnowMountainQuest", QuestLevel = 2, MobName = "Arctic Warrior",    NPC = "SnowMountainQuest", MobArea = CFrame.new(612, 400, -5100), QuestNPC = CFrame.new(612, 400, -5100) },
+    { MinLevel = 1250, MaxLevel = 1324, QuestName = "IceSideQuest2",    QuestLevel = 1, MobName = "Fishman Raider",     NPC = "IceSideQuest2",    MobArea = CFrame.new(-6050, 15, -4920), QuestNPC = CFrame.new(-6050, 15, -4920) },
+    { MinLevel = 1325, MaxLevel = 1374, QuestName = "ForgottenQuest",   QuestLevel = 1, MobName = "Forest Pirate",      NPC = "ForgottenQuest",   MobArea = CFrame.new(-3204, 296, -10372), QuestNPC = CFrame.new(-3204, 296, -10372) },
+    { MinLevel = 1375, MaxLevel = 1424, QuestName = "ForgottenQuest",   QuestLevel = 2, MobName = "Mythological Pirate", NPC = "ForgottenQuest", MobArea = CFrame.new(-3204, 296, -10372), QuestNPC = CFrame.new(-3204, 296, -10372) },
+    { MinLevel = 1425, MaxLevel = 1499, QuestName = "PiratePortQuest",  QuestLevel = 1, MobName = "Pirate Millionaire",  NPC = "PiratePortQuest", MobArea = CFrame.new(-290, 44, 4536),  QuestNPC = CFrame.new(-290, 44, 4536) },
+}
+
+-- ===== SEA 3 (Third Sea) =====
+local Sea3Quests = {
+    { MinLevel = 1500, MaxLevel = 1574, QuestName = "TikiQuest1",       QuestLevel = 1, MobName = "Isle Outlaw",          NPC = "TikiQuest1",       MobArea = CFrame.new(-16500, 55, 5500), QuestNPC = CFrame.new(-16200, 55, 5450) },
+    { MinLevel = 1575, MaxLevel = 1649, QuestName = "TikiQuest1",       QuestLevel = 2, MobName = "Isle Champion",        NPC = "TikiQuest1",       MobArea = CFrame.new(-16500, 55, 5500), QuestNPC = CFrame.new(-16200, 55, 5450) },
+    { MinLevel = 1650, MaxLevel = 1724, QuestName = "MansionQuest",     QuestLevel = 1, MobName = "Lab Subordinate",      NPC = "MansionQuest",     MobArea = CFrame.new(-12488, 332, -7577), QuestNPC = CFrame.new(-12488, 332, -7577) },
+    { MinLevel = 1725, MaxLevel = 1799, QuestName = "MansionQuest",     QuestLevel = 2, MobName = "Horned Warrior",       NPC = "MansionQuest",     MobArea = CFrame.new(-12488, 332, -7577), QuestNPC = CFrame.new(-12488, 332, -7577) },
+    { MinLevel = 1800, MaxLevel = 1874, QuestName = "CartQuest",        QuestLevel = 1, MobName = "Marine Commodore",     NPC = "CartQuest",        MobArea = CFrame.new(-12700, 316, -7672), QuestNPC = CFrame.new(-12700, 316, -7672) },
+    { MinLevel = 1875, MaxLevel = 1949, QuestName = "CartQuest",        QuestLevel = 2, MobName = "Marine Rear Admiral",  NPC = "CartQuest",        MobArea = CFrame.new(-12700, 316, -7672), QuestNPC = CFrame.new(-12700, 316, -7672) },
+    { MinLevel = 1950, MaxLevel = 2024, QuestName = "CastleQuest",      QuestLevel = 1, MobName = "Jungle Pirate",        NPC = "CastleQuest",      MobArea = CFrame.new(-10502, 331, -8823), QuestNPC = CFrame.new(-10502, 331, -8823) },
+    { MinLevel = 2025, MaxLevel = 2074, QuestName = "CastleQuest",      QuestLevel = 2, MobName = "Musketeer Pirate",     NPC = "CastleQuest",      MobArea = CFrame.new(-10502, 331, -8823), QuestNPC = CFrame.new(-10502, 331, -8823) },
+    { MinLevel = 2075, MaxLevel = 2174, QuestName = "MiniSkyQuest",     QuestLevel = 1, MobName = "Reborn Skeleton",      NPC = "MiniSkyQuest",     MobArea = CFrame.new(-9500, 140, 5600), QuestNPC = CFrame.new(-9500, 140, 5600) },
+    { MinLevel = 2175, MaxLevel = 2274, QuestName = "MiniSkyQuest",     QuestLevel = 2, MobName = "Living Zombie",        NPC = "MiniSkyQuest",     MobArea = CFrame.new(-9500, 140, 5600), QuestNPC = CFrame.new(-9500, 140, 5600) },
+    { MinLevel = 2275, MaxLevel = 2349, QuestName = "ShipQuest1",       QuestLevel = 1, MobName = "Ship Deckhand",        NPC = "ShipQuest1",       MobArea = CFrame.new(1190, 125, 33000), QuestNPC = CFrame.new(1190, 125, 33000) },
+    { MinLevel = 2350, MaxLevel = 2449, QuestName = "ShipQuest2",       QuestLevel = 1, MobName = "Ship Engineer",        NPC = "ShipQuest2",       MobArea = CFrame.new(1190, 125, 33200), QuestNPC = CFrame.new(1190, 125, 33200) },
+    { MinLevel = 2450, MaxLevel = 2549, QuestName = "ShipQuest3",       QuestLevel = 1, MobName = "Ship Steward",         NPC = "ShipQuest3",       MobArea = CFrame.new(1190, 125, 33400), QuestNPC = CFrame.new(1190, 125, 33400) },
+    { MinLevel = 2550, MaxLevel = 2649, QuestName = "ShipQuest4",       QuestLevel = 1, MobName = "Ship Officer",         NPC = "ShipQuest4",       MobArea = CFrame.new(1190, 125, 33600), QuestNPC = CFrame.new(1190, 125, 33600) },
+    { MinLevel = 2650, MaxLevel = 2800, QuestName = "ShipQuest5",       QuestLevel = 1, MobName = "Ship Captain",         NPC = "ShipQuest5",       MobArea = CFrame.new(1190, 125, 33800), QuestNPC = CFrame.new(1190, 125, 33800) },
+}
+
+-- Merge all quests into one database
+local QuestDatabase = {}
+for _, q in ipairs(Sea1Quests) do table.insert(QuestDatabase, q) end
+for _, q in ipairs(Sea2Quests) do table.insert(QuestDatabase, q) end
+for _, q in ipairs(Sea3Quests) do table.insert(QuestDatabase, q) end
 
 local MaterialData = {
     ["Bones"] = { MobName = "Reborn Skeleton", CFrame = CFrame.new(-9500, 140, 5600) },
@@ -356,9 +409,32 @@ local BossDatabase = {
     "Don Swan [Boss]", "Cyborg [Boss]", "Ice Admiral", "Jeremy", "Greybeard [Boss]"
 }
 
+-- Smart quest finder: matches by level then selects best quest
 local function getQuestData(level)
-    for _, q in ipairs(QuestDatabase) do if level >= q.MinLevel and level <= q.MaxLevel then return q end end
-    return QuestDatabase[#QuestDatabase]
+    local best = nil
+    for _, q in ipairs(QuestDatabase) do
+        if level >= q.MinLevel and level <= q.MaxLevel then
+            best = q
+            break
+        end
+    end
+    return best or QuestDatabase[#QuestDatabase]
+end
+
+-- Check which sea the player should be in based on level
+local function getRequiredSea(level)
+    if level < 700 then return 1
+    elseif level < 1500 then return 2
+    else return 3 end
+end
+
+-- Detect current sea from PlaceId
+local function getCurrentSea()
+    local placeId = game.PlaceId
+    if placeId == 2753915549 then return 1
+    elseif placeId == 4442272183 then return 2
+    elseif placeId == 7449423635 then return 3
+    else return 1 end
 end
 
 -- ============================================================================
@@ -491,19 +567,89 @@ AutoFarmToggle:OnChanged(function(val)
         task.spawn(function()
             while cfg.AutoFarmLevel do
                 task.wait(0.1)
+
+                local char = LocalPlayer.Character
+                if not char then task.wait(1) continue end
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if not hrp or not hum or hum.Health <= 0 then task.wait(1) continue end
+
                 local lvl = LocalPlayer.Data.Level.Value
                 local qData = getQuestData(lvl)
-                local activeQuest = LocalPlayer.PlayerGui:FindFirstChild("Main") and LocalPlayer.PlayerGui.Main:FindFirstChild("Quest")
-                if not (activeQuest and activeQuest.Visible) then
-                    NavigationEngine.TweenTo(qData.QuestNPC, 280, function() RemotesEngine.Invoke("StartQuest", qData.QuestName, qData.QuestLevel) end)
+
+                -- Check if player is in the correct Sea
+                local requiredSea = getRequiredSea(lvl)
+                local currentSea = getCurrentSea()
+                if requiredSea ~= currentSea then
+                    Fluent:Notify({ Title = "Sea Travel Required", Content = "Level " .. lvl .. " requires Sea " .. requiredSea .. ". You are in Sea " .. currentSea .. ". Traveling...", Duration = 8 })
+                    -- Try to travel to correct sea via game teleport
+                    pcall(function()
+                        local seaIds = { [1] = 2753915549, [2] = 4442272183, [3] = 7449423635 }
+                        game:GetService("TeleportService"):Teleport(seaIds[requiredSea], LocalPlayer)
+                    end)
+                    task.wait(10)
+                    continue
+                end
+
+                -- Check if quest is active (look for quest frame in PlayerGui)
+                local hasQuest = false
+                pcall(function()
+                    local mainGui = LocalPlayer.PlayerGui:FindFirstChild("Main")
+                    if mainGui then
+                        local questFrame = mainGui:FindFirstChild("Quest")
+                        if questFrame and questFrame.Visible then
+                            hasQuest = true
+                        end
+                    end
+                end)
+
+                if not hasQuest then
+                    -- ===== STEP 1: Go to Quest NPC and accept quest =====
+                    FastAttackEngine.StopBring()
+                    NavigationEngine.TweenTo(qData.QuestNPC, 280, function()
+                        task.wait(0.3)
+                        -- Accept quest via CommF_ (the real Blox Fruits remote)
+                        RemotesEngine.Invoke("StartQuest", qData.QuestName, qData.QuestLevel)
+                        task.wait(0.5)
+                    end)
+                    task.wait(1)
                 else
+                    -- ===== STEP 2: Quest is active, find and kill mobs =====
                     local enemies = Workspace:FindFirstChild("Enemies")
-                    local mob = enemies and enemies:FindFirstChild(qData.MobName)
-                    if mob and mob:FindFirstChild("HumanoidRootPart") then
-                        FastAttackEngine.StartBring(qData.MobName, mob.HumanoidRootPart.CFrame)
-                        NavigationEngine.TweenTo(mob.HumanoidRootPart.CFrame * CFrame.new(0, 8, 0), 280)
+                    if not enemies then task.wait(0.5) continue end
+
+                    -- Find the CLOSEST ALIVE mob matching quest target
+                    local closestMob = nil
+                    local closestDist = math.huge
+
+                    for _, mob in ipairs(enemies:GetChildren()) do
+                        if mob:IsA("Model") and mob.Name == qData.MobName then
+                            local mobHum = mob:FindFirstChildOfClass("Humanoid")
+                            local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+                            if mobHum and mobHRP and mobHum.Health > 0 then
+                                local dist = (hrp.Position - mobHRP.Position).Magnitude
+                                if dist < closestDist then
+                                    closestDist = dist
+                                    closestMob = mob
+                                end
+                            end
+                        end
+                    end
+
+                    if closestMob and closestMob:FindFirstChild("HumanoidRootPart") then
+                        local mobHRP = closestMob.HumanoidRootPart
+
+                        -- Teleport above the mob and auto-attack
+                        local attackPos = mobHRP.CFrame * CFrame.new(0, 8, 0)
+                        hrp.CFrame = attackPos
+
+                        -- Bring nearby mobs to you for faster farming
+                        FastAttackEngine.StartBring(qData.MobName, hrp.CFrame)
                     else
-                        NavigationEngine.TweenTo(qData.CFrame, 280)
+                        -- No alive mobs found, go to mob spawn area and wait
+                        FastAttackEngine.StopBring()
+                        NavigationEngine.TweenTo(qData.MobArea * CFrame.new(0, 10, 0), 280)
+                        task.wait(2)
                     end
                 end
             end
