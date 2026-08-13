@@ -399,38 +399,46 @@ function FastAttackEngine.PerformAuraAttack()
 end
 
 function FastAttackEngine.Start()
-    if AttackLoopConn then return end
+    if FastAttackEngine.Enabled then return end
     FastAttackEngine.Enabled = true
-    AttackLoopConn = RunService.RenderStepped:Connect(function()
-        if FastAttackEngine.Enabled then
-            FastAttackEngine.EquipWeapon(FastAttackEngine.WeaponType)
-            FastAttackEngine.PerformAuraAttack()
-            task.wait(0.03)
+    task.spawn(function()
+        while FastAttackEngine.Enabled do
+            task.wait(0.015)
+            pcall(function()
+                FastAttackEngine.EquipWeapon(FastAttackEngine.WeaponType)
+                FastAttackEngine.PerformAuraAttack()
+            end)
         end
     end)
 end
 
 function FastAttackEngine.Stop()
     FastAttackEngine.Enabled = false
-    if AttackLoopConn then AttackLoopConn:Disconnect() AttackLoopConn = nil end
 end
 
-function FastAttackEngine.StartBring(mobName, centerCF)
-    if BringLoopConn then return end
+function FastAttackEngine.StartBring(mobName)
     FastAttackEngine.BringMobs = true
+    if BringLoopConn then return end
     BringLoopConn = RunService.Heartbeat:Connect(function()
-        if not FastAttackEngine.BringMobs or not centerCF then return end
+        if not FastAttackEngine.BringMobs then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        local myHRP = char:FindFirstChild("HumanoidRootPart")
+        if not myHRP then return end
+
         local enemies = Workspace:FindFirstChild("Enemies")
         if enemies then
             for _, mob in ipairs(enemies:GetChildren()) do
                 if mob:IsA("Model") and (not mobName or mob.Name == mobName) then
                     local hum = mob:FindFirstChildOfClass("Humanoid")
-                    local hrp = mob:FindFirstChild("HumanoidRootPart")
-                    if hum and hrp and hum.Health > 0 then
-                        if (hrp.Position - centerCF.Position).Magnitude <= FastAttackEngine.BringRadius then
-                            for _, p in ipairs(mob:GetChildren()) do if p:IsA("BasePart") then p.CanCollide = false end end
-                            hrp.CFrame = centerCF * CFrame.new(0, 0, -3)
-                            hrp.Velocity = Vector3.new(0, 0, 0)
+                    local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+                    if hum and mobHRP and hum.Health > 0 then
+                        if (mobHRP.Position - myHRP.Position).Magnitude <= FastAttackEngine.BringRadius then
+                            for _, p in ipairs(mob:GetChildren()) do
+                                if p:IsA("BasePart") then p.CanCollide = false end
+                            end
+                            mobHRP.CFrame = myHRP.CFrame * CFrame.new(0, -2, -3)
+                            mobHRP.Velocity = Vector3.new(0, 0, 0)
                         end
                     end
                 end
@@ -983,12 +991,16 @@ AutoFarmToggle:OnChanged(function(val)
                     if closestMob and closestMob:FindFirstChild("HumanoidRootPart") then
                         local mobHRP = closestMob.HumanoidRootPart
 
-                        -- Teleport above the mob and auto-attack
-                        local attackPos = mobHRP.CFrame * CFrame.new(0, 8, 0)
-                        hrp.CFrame = attackPos
+                        if NavigationEngine.CurrentTween then
+                            NavigationEngine.CurrentTween:Cancel()
+                            NavigationEngine.IsTweening = false
+                        end
 
-                        -- Bring nearby mobs to player position
-                        FastAttackEngine.StartBring(qData.MobName, hrp.CFrame)
+                        -- Teleport directly 7 studs above the mob and auto-attack
+                        hrp.CFrame = mobHRP.CFrame * CFrame.new(0, 7, 0)
+
+                        -- Bring all nearby mobs to player position
+                        FastAttackEngine.StartBring(qData.MobName)
                     else
                         -- No alive mobs found, go to mob spawn area and wait
                         FastAttackEngine.StopBring()
