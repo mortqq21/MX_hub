@@ -255,6 +255,7 @@ end
 -- FAST ATTACK ENGINE
 local FastAttackEngine = { Enabled = false, WeaponType = "Melee", BringMobs = false, BringRadius = 300 }
 local AttackLoopConn, BringLoopConn = nil, nil
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
 function FastAttackEngine.EquipWeapon(category)
     local char = LocalPlayer.Character
@@ -268,14 +269,13 @@ function FastAttackEngine.EquipWeapon(category)
 end
 
 function FastAttackEngine.PerformClick()
-    VirtualUser:CaptureController()
-    VirtualUser:Button1Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
-    VirtualUser:Button1Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
-    local char = LocalPlayer.Character
-    if char then
-        local tool = char:FindFirstChildOfClass("Tool")
-        if tool and tool:FindFirstChild("RemoteFunction") then pcall(function() tool.RemoteFunction:InvokeServer() end) end
-    end
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:Button1Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+        VirtualUser:Button1Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    end)
 end
 
 function FastAttackEngine.Start()
@@ -285,7 +285,7 @@ function FastAttackEngine.Start()
         if FastAttackEngine.Enabled then
             FastAttackEngine.EquipWeapon(FastAttackEngine.WeaponType)
             FastAttackEngine.PerformClick()
-            task.wait(math.random(4, 7) / 100)
+            task.wait(0.05)
         end
     end)
 end
@@ -747,12 +747,16 @@ local function hasActiveQuest()
         if mainGui then
             local qFrame = mainGui:FindFirstChild("Quest")
             if qFrame then
-                if qFrame.Visible then
-                    active = true
-                else
-                    local container = qFrame:FindFirstChild("Container")
-                    if container and container.Visible then
-                        active = true
+                if qFrame.Visible then active = true end
+                local container = qFrame:FindFirstChild("Container")
+                if container and container.Visible then active = true end
+                for _, child in ipairs(qFrame:GetDescendants()) do
+                    if child:IsA("TextLabel") and child.Text and child.Text ~= "" then
+                        local txt = child.Text
+                        if txt:find("Defeat") or txt:find("Kill") or txt:find("/") or txt:find("Quest") then
+                            active = true
+                            break
+                        end
                     end
                 end
             end
