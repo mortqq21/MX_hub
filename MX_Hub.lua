@@ -529,20 +529,192 @@ local function createFloatingToggle()
 end
 
 -- ============================================================================
+-- KEY SYSTEM ENGINE (نظام تفعيل المفتاح مع حفظ المفتاح تلقائياً)
+-- ============================================================================
+local KeySystem = {
+    ValidKeys = {
+        ["MX-MORTQQ21-VIP"] = true,
+        ["MX-HUB-FREE-2026"] = true,
+        ["MX-PERMANENT-2800"] = true,
+        ["mortqq21"] = true
+    },
+    SavedKeyFile = "MX_Hub/saved_key.txt"
+}
+
+function KeySystem.CheckSavedKey()
+    pcall(function()
+        if isfile and readfile and isfile(KeySystem.SavedKeyFile) then
+            local saved = readfile(KeySystem.SavedKeyFile):gsub("%s+", "")
+            if KeySystem.ValidKeys[saved] then
+                return true
+            end
+        end
+    end)
+    return false
+end
+
+function KeySystem.SaveKey(key)
+    pcall(function()
+        if writefile and makefolder then
+            if isfolder and not isfolder("MX_Hub") then makefolder("MX_Hub") end
+            writefile(KeySystem.SavedKeyFile, key)
+        end
+    end)
+end
+
+function KeySystem.PromptKey(onSuccess)
+    if KeySystem.CheckSavedKey() then
+        onSuccess()
+        return
+    end
+
+    local coreGui = game:GetService("CoreGui")
+    local existing = coreGui:FindFirstChild("MX_KeySystemGui")
+    if existing then existing:Destroy() end
+
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "MX_KeySystemGui"
+    sg.ResetOnSpawn = false
+    sg.DisplayOrder = 9999999
+    sg.Parent = coreGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 420, 0, 260)
+    frame.Position = UDim2.new(0.5, -210, 0.5, -130)
+    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Draggable = true
+    frame.Parent = sg
+
+    local corner = Instance.new("UICorner", frame)
+    corner.CornerRadius = UDim.new(0, 16)
+
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Color = Color3.fromRGB(255, 50, 50)
+    stroke.Thickness = 2
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.BackgroundTransparency = 1
+    title.Text = "🔑 MX HUB | Key Verification System"
+    title.TextColor3 = Color3.fromRGB(255, 60, 60)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 18
+    title.Parent = frame
+
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, -40, 0, 30)
+    subtitle.Position = UDim2.new(0, 20, 0, 45)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "Please enter your permanent key to unlock MX Hub"
+    subtitle.TextColor3 = Color3.fromRGB(180, 180, 190)
+    subtitle.Font = Enum.Font.Gotham
+    subtitle.TextSize = 13
+    subtitle.Parent = frame
+
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(1, -40, 0, 45)
+    textBox.Position = UDim2.new(0, 20, 0, 90)
+    textBox.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.PlaceholderText = "Enter Key Here..."
+    textBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 140)
+    textBox.Font = Enum.Font.GothamBold
+    textBox.TextSize = 14
+    textBox.Text = ""
+    textBox.ClearTextOnFocus = false
+    textBox.Parent = frame
+
+    local tbCorner = Instance.new("UICorner", textBox)
+    tbCorner.CornerRadius = UDim.new(0, 10)
+
+    local tbStroke = Instance.new("UIStroke", textBox)
+    tbStroke.Color = Color3.fromRGB(60, 60, 80)
+    tbStroke.Thickness = 1
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, -40, 0, 25)
+    statusLabel.Position = UDim2.new(0, 20, 0, 140)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = ""
+    statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextSize = 12
+    statusLabel.Parent = frame
+
+    local verifyBtn = Instance.new("TextButton")
+    verifyBtn.Size = UDim2.new(0.46, 0, 0, 42)
+    verifyBtn.Position = UDim2.new(0, 20, 0, 185)
+    verifyBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+    verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    verifyBtn.Font = Enum.Font.GothamBold
+    verifyBtn.TextSize = 14
+    verifyBtn.Text = "Verify Key"
+    verifyBtn.Parent = frame
+
+    local vCorner = Instance.new("UICorner", verifyBtn)
+    vCorner.CornerRadius = UDim.new(0, 10)
+
+    local getBtn = Instance.new("TextButton")
+    getBtn.Size = UDim2.new(0.46, 0, 0, 42)
+    getBtn.Position = UDim2.new(0.54, 0, 0, 185)
+    getBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    getBtn.TextColor3 = Color3.fromRGB(220, 220, 230)
+    getBtn.Font = Enum.Font.GothamBold
+    getBtn.TextSize = 14
+    getBtn.Text = "Get Key"
+    getBtn.Parent = frame
+
+    local gCorner = Instance.new("UICorner", getBtn)
+    gCorner.CornerRadius = UDim.new(0, 10)
+
+    verifyBtn.MouseButton1Click:Connect(function()
+        local input = textBox.Text:gsub("%s+", "")
+        if KeySystem.ValidKeys[input] then
+            statusLabel.TextColor3 = Color3.fromRGB(80, 255, 120)
+            statusLabel.Text = "✓ Key Verified Successfully! Loading..."
+            KeySystem.SaveKey(input)
+            task.wait(0.8)
+            sg:Destroy()
+            onSuccess()
+        else
+            statusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+            statusLabel.Text = "❌ Invalid Key! Check your key and try again."
+        end
+    end)
+
+    getBtn.MouseButton1Click:Connect(function()
+        pcall(function()
+            if setclipboard then
+                setclipboard("MX-MORTQQ21-VIP")
+                statusLabel.TextColor3 = Color3.fromRGB(80, 220, 255)
+                statusLabel.Text = "📋 Key copied to clipboard: MX-MORTQQ21-VIP"
+            else
+                textBox.Text = "MX-MORTQQ21-VIP"
+                statusLabel.TextColor3 = Color3.fromRGB(80, 220, 255)
+                statusLabel.Text = "Permanent Key filled in textbox!"
+            end
+        end)
+    end)
+end
+
+-- ============================================================================
 -- 5. FLUENT UI & MODULE BINDINGS
 -- ============================================================================
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local function initializeMXHub()
+    local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-local cfg = ConfigManager.Load()
-Performance.SetAntiAFK(cfg.AntiAFK)
-Performance.SetFPSBooster(cfg.FPSBooster)
+    local cfg = ConfigManager.Load()
+    Performance.SetAntiAFK(cfg.AntiAFK)
+    Performance.SetFPSBooster(cfg.FPSBooster)
 
-local Window = Fluent:CreateWindow({
-    Title = "MX HUB | Blox Fruits [v3.1 Complete]", SubTitle = "by MX Development Team", TabWidth = 165, Size = UDim2.fromOffset(620, 500), Acrylic = true, Theme = "Darker", MinimizeKey = Enum.KeyCode.RightControl
-})
+    local Window = Fluent:CreateWindow({
+        Title = "MX HUB | Blox Fruits [v3.1 Complete]", SubTitle = "by MX Development Team", TabWidth = 165, Size = UDim2.fromOffset(620, 500), Acrylic = true, Theme = "Darker", MinimizeKey = Enum.KeyCode.RightControl
+    })
 
--- Create floating toggle icon button
-createFloatingToggle()
+    -- Create floating toggle icon button
+    createFloatingToggle()
 
 local Tabs = {
     Main = Window:AddTab({ Title = "Main / Auto Farm", Icon = "home" }),
@@ -907,7 +1079,11 @@ WhiteScreenToggle:OnChanged(function(val) cfg.WhiteScreen = val ConfigManager.Sa
 local WaterWalkToggle = Tabs.Settings:AddToggle("WaterWalk", { Title = "Water Walk (المشي فوق الماء)", Default = cfg.WaterWalk })
 WaterWalkToggle:OnChanged(function(val) cfg.WaterWalk = val WaterWalkEngine.Enabled = val ConfigManager.Save() end)
 
-Window:SelectTab(1)
-Fluent:Notify({ Title = "MX Hub v3.1 Loaded", Content = "Floating Toggle Icon, Water Walk, & Altitude Flight Control Active!", Duration = 6 })
+    Window:SelectTab(1)
+    Fluent:Notify({ Title = "MX Hub v3.1 Loaded", Content = "Floating Toggle Icon, Water Walk, & Altitude Flight Control Active!", Duration = 6 })
 
-print("[MX Hub v3.1] Updated with Floating Toggle Icon, Water Walk, & Flight Altitude Manager!")
+    print("[MX Hub v3.1] Updated with Floating Toggle Icon, Water Walk, & Flight Altitude Manager!")
+end
+
+-- Launch Key Verification System
+KeySystem.PromptKey(initializeMXHub)
