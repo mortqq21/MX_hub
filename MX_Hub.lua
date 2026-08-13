@@ -252,10 +252,10 @@ function NavigationEngine.TweenTo(targetCF, customSpeed, onComplete)
     return tween
 end
 
--- FAST ATTACK ENGINE
-local FastAttackEngine = { Enabled = false, WeaponType = "Melee", BringMobs = false, BringRadius = 300 }
+-- KILL AURA & FAST ATTACK ENGINE (نظام هالة الضرب والتدمير عن بعد - نفس ريدز)
+local FastAttackEngine = { Enabled = false, WeaponType = "Melee", BringMobs = false, BringRadius = 350, AuraRadius = 60 }
 local AttackLoopConn, BringLoopConn = nil, nil
-local VirtualInputManager = game:GetService("VirtualInputManager")
+local NetNet = ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules:FindFirstChild("Net")
 
 function FastAttackEngine.EquipWeapon(category)
     category = category or cfg.FarmWeapon or "Melee"
@@ -267,26 +267,20 @@ function FastAttackEngine.EquipWeapon(category)
 
     local current = char:FindFirstChildOfClass("Tool")
 
-    -- Check if category specifies a Slot number (e.g. Slot 1, Slot 2, Slot 3, Slot 4, Slot 5)
     local slotNum = category:match("Slot%s*(%d+)") or category:match("(%d+)")
     if slotNum then
         slotNum = tonumber(slotNum)
         local allTools = {}
         if current then table.insert(allTools, current) end
-        for _, t in ipairs(backpack:GetChildren()) do
-            if t:IsA("Tool") then table.insert(allTools, t) end
-        end
+        for _, t in ipairs(backpack:GetChildren()) do if t:IsA("Tool") then table.insert(allTools, t) end end
 
         if allTools[slotNum] then
             local targetTool = allTools[slotNum]
-            if current ~= targetTool then
-                hum:EquipTool(targetTool)
-            end
+            if current ~= targetTool then hum:EquipTool(targetTool) end
             return targetTool
         end
     end
 
-    -- If category is "Current Tool", keep using whatever is currently equipped in hand
     if category:find("Current") then
         if current then return current end
         local t = backpack:FindFirstChildOfClass("Tool")
@@ -294,7 +288,6 @@ function FastAttackEngine.EquipWeapon(category)
         return
     end
 
-    -- Standard Category Matching (Melee, Sword, Blox Fruit)
     local cleanCat = "Melee"
     if category:find("Sword") then cleanCat = "Sword"
     elseif category:find("Blox Fruit") or category:find("Fruit") then cleanCat = "Blox Fruit"
@@ -302,7 +295,6 @@ function FastAttackEngine.EquipWeapon(category)
 
     FastAttackEngine.WeaponType = cleanCat
 
-    -- Check if current held tool matches requested category
     if current and current:IsA("Tool") then
         local toolTip = current.ToolTip or ""
         local name = current.Name
@@ -315,7 +307,6 @@ function FastAttackEngine.EquipWeapon(category)
         end
     end
 
-    -- Search Backpack for matching tool
     for _, tool in ipairs(backpack:GetChildren()) do
         if tool:IsA("Tool") then
             local toolTip = tool.ToolTip or ""
@@ -336,21 +327,67 @@ function FastAttackEngine.EquipWeapon(category)
         end
     end
 
-    -- Fallback: equip any available tool
     if not current then
         local t = backpack:FindFirstChildOfClass("Tool")
         if t then hum:EquipTool(t) return t end
     end
 end
 
-function FastAttackEngine.PerformClick()
-    pcall(function()
-        VirtualUser:CaptureController()
-        VirtualUser:Button1Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
-        VirtualUser:Button1Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-    end)
+-- Redz-Style Kill Aura Distance Damage (تدمير كل الوحوش القريبة في نطاق الهالة تلقائياً)
+function FastAttackEngine.PerformAuraAttack()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local currentTool = char:FindFirstChildOfClass("Tool")
+    if not currentTool then return end
+
+    local enemies = Workspace:FindFirstChild("Enemies")
+    if not enemies then return end
+
+    local targets = {}
+    for _, mob in ipairs(enemies:GetChildren()) do
+        if mob:IsA("Model") then
+            local hum = mob:FindFirstChildOfClass("Humanoid")
+            local mobHRP = mob:FindFirstChild("HumanoidRootPart")
+            if hum and mobHRP and hum.Health > 0 then
+                local dist = (hrp.Position - mobHRP.Position).Magnitude
+                if dist <= FastAttackEngine.AuraRadius then
+                    table.insert(targets, mobHRP)
+                end
+            end
+        end
+    end
+
+    if #targets > 0 then
+        -- Execute Blox Fruits official RegisterAttack remote
+        pcall(function()
+            local regAttack = NetNet and NetNet:FindFirstChild("RegisterAttack") or ReplicatedStorage:FindFirstChild("RegisterAttack")
+            if regAttack then
+                regAttack:FireServer(0.01)
+            end
+        end)
+
+        -- Execute hit registration for all targets inside the aura radius
+        pcall(function()
+            local regHit = NetNet and NetNet:FindFirstChild("RegisterHit") or ReplicatedStorage:FindFirstChild("RegisterHit")
+            if regHit then
+                for _, mobHRP in ipairs(targets) do
+                    regHit:FireServer(mobHRP, {mobHRP})
+                end
+            end
+        end)
+
+        -- Activate weapon handle touch for instant damage
+        local handle = currentTool:FindFirstChild("Handle")
+        if handle then
+            for _, mobHRP in ipairs(targets) do
+                firetouchinterest(handle, mobHRP, 0)
+                firetouchinterest(handle, mobHRP, 1)
+            end
+        end
+    end
 end
 
 function FastAttackEngine.Start()
@@ -359,8 +396,8 @@ function FastAttackEngine.Start()
     AttackLoopConn = RunService.RenderStepped:Connect(function()
         if FastAttackEngine.Enabled then
             FastAttackEngine.EquipWeapon(FastAttackEngine.WeaponType)
-            FastAttackEngine.PerformClick()
-            task.wait(0.05)
+            FastAttackEngine.PerformAuraAttack()
+            task.wait(0.03)
         end
     end)
 end
