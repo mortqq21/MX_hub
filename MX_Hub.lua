@@ -258,10 +258,61 @@ local AttackLoopConn, BringLoopConn = nil, nil
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 function FastAttackEngine.EquipWeapon(category)
+    category = category or cfg.FarmWeapon or "Melee"
     local char = LocalPlayer.Character
     local backpack = LocalPlayer.Backpack
     if not char or not backpack then return end
+
     local current = char:FindFirstChildOfClass("Tool")
+
+    -- Clean category string
+    if category:find("Melee") then category = "Melee"
+    elseif category:find("Sword") then category = "Sword"
+    elseif category:find("Blox Fruit") then category = "Blox Fruit"
+    elseif category:find("Current") then category = "Current Tool"
+    end
+
+    FastAttackEngine.WeaponType = category
+
+    -- 1. If category is "Current Tool", use whatever is currently equipped in hand
+    if category == "Current Tool" then
+        if current then return current end
+        for _, tool in ipairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then tool.Parent = char return tool end
+        end
+        return
+    end
+
+    -- 2. Check if currently held tool already matches the requested category
+    if current and current:IsA("Tool") then
+        local toolTip = current.ToolTip or ""
+        if category == "Melee" and (toolTip == "Melee" or toolTip == "" or current.Name:find("Style") or current.Name:find("Leg") or current.Name:find("Karate") or current.Name:find("Step") or current.Name:find("Combat") or current.Name:find("Electro") or current.Name:find("Claw") or current.Name:find("Talon") or current.Name:find("Godhuman") or current.Name:find("Sanguine") or current.Name:find("Breath")) then
+            return current
+        elseif category == "Sword" and (toolTip == "Sword" or current.Name:find("Katana") or current.Name:find("Blade") or current.Name:find("Sword") or current.Name:find("Saber") or current.Name:find("Yoru") or current.Name:find("Saddi") or current.Name:find("Wando") or current.Name:find("Shisui") or current.Name:find("Pole") or current.Name:find("Trident") or current.Name:find("Scythe") or current.Name:find("Anchor")) then
+            return current
+        elseif category == "Blox Fruit" and (toolTip == "Blox Fruit" or current.Name:find("Fruit") or current.Name:find("Kitsune") or current.Name:find("Buddha") or current.Name:find("Leopard") or current.Name:find("Dough") or current.Name:find("Dragon") or current.Name:find("T-Rex") or current.Name:find("Venom") or current.Name:find("Ice") or current.Name:find("Light") or current.Name:find("Magma")) then
+            return current
+        end
+    end
+
+    -- 3. Search Backpack for tool matching category
+    for _, tool in ipairs(backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            local toolTip = tool.ToolTip or ""
+            if category == "Melee" and (toolTip == "Melee" or toolTip == "" or tool.Name:find("Style") or tool.Name:find("Leg") or tool.Name:find("Karate") or tool.Name:find("Step") or tool.Name:find("Combat") or tool.Name:find("Electro") or tool.Name:find("Claw") or tool.Name:find("Talon") or tool.Name:find("Godhuman") or tool.Name:find("Sanguine") or tool.Name:find("Breath")) then
+                tool.Parent = char
+                return tool
+            elseif category == "Sword" and (toolTip == "Sword" or tool.Name:find("Katana") or tool.Name:find("Blade") or tool.Name:find("Sword") or tool.Name:find("Saber") or tool.Name:find("Yoru") or tool.Name:find("Saddi") or tool.Name:find("Wando") or tool.Name:find("Shisui") or tool.Name:find("Pole") or tool.Name:find("Trident") or tool.Name:find("Scythe") or tool.Name:find("Anchor")) then
+                tool.Parent = char
+                return tool
+            elseif category == "Blox Fruit" and (toolTip == "Blox Fruit" or tool.Name:find("Fruit") or tool.Name:find("Kitsune") or tool.Name:find("Buddha") or tool.Name:find("Leopard") or tool.Name:find("Dough") or tool.Name:find("Dragon") or tool.Name:find("T-Rex") or tool.Name:find("Venom") or tool.Name:find("Ice") or tool.Name:find("Light") or tool.Name:find("Magma")) then
+                tool.Parent = char
+                return tool
+            end
+        end
+    end
+
+    -- 4. Fallback: if category tool not found, keep or equip any tool
     if current then return current end
     for _, tool in ipairs(backpack:GetChildren()) do
         if tool:IsA("Tool") then tool.Parent = char return tool end
@@ -736,6 +787,19 @@ local Tabs = {
 
 -- TAB 1: MAIN FARM
 Tabs.Main:AddSection("Auto Level & Combat Engine (Level 1 - 2800)")
+
+local WeaponDropdown = Tabs.Main:AddDropdown("SelectFarmWeapon", {
+    Title = "Select Farm Weapon (اختر سلاح التلفيل)",
+    Values = { "Melee (أسلوب القتال الحالي)", "Sword (السيف الحالي)", "Blox Fruit (الفاكهة الحالية)", "Current Tool (السلاح في يدك)" },
+    Multi = false,
+    Default = 1
+})
+WeaponDropdown:OnChanged(function(v)
+    cfg.FarmWeapon = v
+    FastAttackEngine.WeaponType = v
+    ConfigManager.Save()
+end)
+
 local AutoFarmToggle = Tabs.Main:AddToggle("AutoFarmLevel", { Title = "Auto Farm Level (1 - 2800 Max)", Default = cfg.AutoFarmLevel })
 
 local lastQuestAttempt = 0
